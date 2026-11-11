@@ -1,6 +1,6 @@
 ---
 name: research-orchestrator
-description: Coordinate an embodied AI research task across paper discovery, reading, comparison, reproduction planning, citations, and a local notes library. Use for multi-step research requests; use a focused paper skill for a single operation.
+description: Coordinate single-paper notes, topic research, related-work reading routes, and library curation as four embodied AI research workflows. Use for multi-step research requests; use a focused paper skill for a single operation.
 ---
 
 # Research orchestrator
@@ -11,13 +11,16 @@ Work in the user's selected Embodied Paper Notes repository. Notes, evidence and
 
 Call `get_capabilities` once, then inspect the advertised input schemas for the tools needed. Do not assume every external integration is installed. If the selected library is unclear, inspect the connected server's root or the repository marker `epn.toml` before writing.
 
-- Find papers or expand a reading list: `paper-discover`, using `federated_search`, `citation_graph` and the reading queue.
-- Read and save a particular paper: `paper-ingest`, using `prepare_paper` → bounded evidence reads → `commit_paper_summary`.
-- Investigate a question across a corpus: `paper-research`, using saved source notes → `prepare_research` → `commit_research`.
-- Compare named approaches or experiments: `paper-compare` and `prepare_comparison`.
-- Assess how to reproduce a paper: `paper-reproduce` and `prepare_reproduction`.
-- Export references: `citation-manager` and `export_citations`.
-- Find, inspect, repair or synchronize existing notes: `library-maintain`.
+The user selected four top-level pipelines. Their stable IDs and destinations are:
+
+- `paper-summary`: read and save a particular paper with `paper-ingest`, using `prepare_paper` → bounded evidence reads → `commit_paper_summary`.
+- `topic-research`: investigate a question across a corpus with `paper-discover` and `paper-research`; reuse the single-paper workflow for selected sources, then `prepare_research` → `commit_research`.
+- `related-work`: expand seed papers or keywords into a reasoned reading route with `paper-discover`, using `federated_search`, `citation_graph` and the queue. The default deliverable is a reading list, not a full literature review.
+- `library-curation`: find, inspect, repair or synchronize existing notes with `library-maintain`. Reuse the single-paper workflow when a source note needs revision.
+
+Use `paper-compare`/`prepare_comparison` as an internal topic-research step when useful, and `citation-manager`/`export_citations` as a shared output step. Other specialized tools remain callable for explicit requests; do not add top-level reproduction, proposal or experiment-analysis pipelines to the selected scope.
+
+These are workflow routes. Until a stateful executor is actually exposed, orchestrate the available tools directly and describe progress accurately; do not invent run IDs, resume interfaces or completed steps.
 
 Load only the relevant installed skills. If one is unavailable, perform the same workflow using available tools rather than treating a skill name as an executable command.
 

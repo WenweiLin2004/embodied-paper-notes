@@ -4,11 +4,24 @@
 
 本仓库以 Markdown、证据记录和 Git 为持久层。网站是阅读界面，本地 `embodied-notes` MCP 是写入与研究工具，模型由当前 AI 客户端提供。默认的 Agent 流程不要求配置单独的模型 API 密钥；主动使用自动模型管线时才使用相应配置。外部学术 API 仍可能限流或要求自己的访问凭据。
 
+## 四个已选顶层 pipeline
+
+本轮收束为四个入口，详细输入、输出和阶段边界见 [管线设计](pipeline-design.md)：
+
+- **`paper-summary` → `paper-ingest`**：从论文链接或标识符获取证据，完成单篇阅读、中文总结、分类和保存。已有笔记可先通过本地搜索复用。
+- **`topic-research` → `paper-research`**：围绕明确问题形成跨论文调研报告；内部使用 `paper-discover` 检索与筛选、`paper-ingest` 阅读入库、`paper-compare` 核查比较条件，按需由 `citation-manager` 导出引用。
+- **`related-work` → `paper-discover`**：围绕种子论文或问题进行多源检索与引用关系扩展，提供有来源的候选、关联理由和阅读队列。候选元数据不等于已精读结论；需要精读或综合报告时进入前两条流程。
+- **`library-curation` → `library-maintain`**：维护已有文库，检查分类、重复/版本候选、引用和内容质量，保护人工批注，按授权处理同步。发现问题不等于允许批量覆盖或删除。
+
+`research-orchestrator` 选择这些入口并组合所需部件。现有 **8 个 Skills、28 个 MCP 工具、3 个资源、4 个 Prompt** 继续保留；8 个技能是可复用部件，不是 8 条 pipeline。`paper-compare`、`paper-reproduce` 和 `citation-manager` 可在流程中按需使用，也可单独调用，但不列为本轮顶层入口。
+
+目前 Agent 可以按技能调用现有工具完成具体步骤；统一执行器仍待实现。本轮只确定管线设计与技能路由，不提供新的 pipeline 执行命令，也不把已有的单步自动模式称为统一执行器。
+
 ## 先用核心能力
 
 从仓库根目录按 README 安装后，调用 `get_capabilities`，再检查客户端实际暴露的 tool schema、resources 和 prompts。以运行中的返回值为准，不把文档列出的名字当成已经连接成功的证据。
 
-八个技能按任务拆分，可以单独调用：
+八个技能按能力拆分，可以单独调用，也可组成上面的四条流程：
 
 - `research-orchestrator`：多步骤研究的入口，选择下一步需要的工具和证据。
 - `paper-discover`：多源发现、引用关系扩展、候选筛选和阅读队列。

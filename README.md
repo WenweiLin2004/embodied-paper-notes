@@ -2,7 +2,7 @@
 
 面向具身智能的论文笔记与主题调研工作台。Markdown 是内容源；Quartz 提供静态网站；Python CLI 和本地 MCP 提供检索、证据读取、分类、入库与跨论文调研。项目文档和状态保留在仓库，不使用 Notion。
 
-[网站](https://wenweilin2004.github.io/embodied-paper-notes/) · [架构](docs/architecture.md) · [Skills/MCP 生态](docs/ecosystem.md) · [开源复用记录](docs/upstream.md)
+[网站](https://wenweilin2004.github.io/embodied-paper-notes/) · [管线设计](docs/pipeline-design.md) · [架构](docs/architecture.md) · [Skills/MCP 生态](docs/ecosystem.md) · [开源复用记录](docs/upstream.md)
 
 ## 能做什么
 
@@ -13,6 +13,17 @@
 - 阅读队列保存筛选状态与理由；离线检索笔记和原文证据；真实元数据导出 BibTeX / CSL-JSON。
 - CLI、28 个 stdio MCP 工具、3 个资源、4 个工作流 Prompt 和 8 个可安装 Skill 共用验证逻辑。
 - 全文缓存不入 Git；笔记和报告随仓库同步，GitHub Actions 校验并发布 Pages。
+
+## 四个顶层工作流
+
+当前选定以下四条 pipeline，完整边界见 [管线设计](docs/pipeline-design.md)：
+
+- `paper-summary`：给定论文链接，读取、总结、分类并入库；主要使用 `paper-ingest`。
+- `topic-research`：围绕问题检索、筛选、阅读并形成有证据的主题报告；主要使用 `paper-research`，将 `paper-discover` 和 `paper-compare` 作为内部步骤。
+- `related-work`：从论文或研究问题扩展相关工作，给出关联理由和候选阅读队列；主要使用 `paper-discover`。
+- `library-curation`：检索与检查已有文库，整理分类、重复或版本问题，保护人工批注并按请求同步；主要使用 `library-maintain`。
+
+下文的 8 个 Skills 是可组合的部件，不代表 8 条顶层 pipeline。当前由 Agent 按 Skill 调用现有 MCP/CLI 完成步骤；四个名称是设计入口，统一执行器仍待实现，本轮不开发执行器。
 
 ## 安装
 
@@ -53,6 +64,8 @@ epn doctor
 升级已安装的仓库技能时，先查看本地改动，再执行 `epn install --client codex --force`；这会更新打包的 Skill 文件，不覆盖其他 MCP 条目。`epn capabilities` 返回实际安装能力。
 
 ## Skills 与 MCP 组合
+
+`research-orchestrator` 负责四个入口之间的路由；其余技能按需要作为步骤或辅助能力使用，比较、复现准备和引用导出不新增顶层 pipeline。
 
 - `research-orchestrator`：研究总入口，按问题组合下列技能，记录范围和不足。
 - `paper-discover`：多源检索、引文追踪、候选筛选与阅读队列。

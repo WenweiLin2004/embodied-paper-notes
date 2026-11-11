@@ -23,6 +23,8 @@ flowchart LR
 
 `mcp_extensions.py` 注册组合工具、3 个只读资源和 4 个工作流 Prompt。`get_capabilities` 返回真实可用能力与输出格式，避免技能猜接口。8 个 Skills 负责研究决策与编排，底层写入仍通过同一套校验。`integrations.py` 可选配置已有生态中的 arXiv / GitHub MCP，不默认增加运行环境或保存凭证。
 
+用户已确认的顶层 Pipeline 为四条：`paper-summary`、`topic-research`、`related-work`、`library-curation`，详见 [Pipeline 方案](pipeline-design.md)。比较属于调研内部步骤；Skills 和 MCP 工具是这些流程共用的部件。统一、有状态、可恢复的执行器仍待实现。
+
 ## 质量约束
 
 - `full_text=false` 不能写入 `coverage=full_text`。
