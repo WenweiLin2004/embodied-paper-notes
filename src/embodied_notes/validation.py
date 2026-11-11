@@ -38,6 +38,9 @@ def validate_library(root: Path) -> dict:
             report, _ = read_markdown(path)
             if "references" not in report:
                 continue
+            if "planning" in report:
+                from .research import normalize_planning
+                normalize_planning(report["planning"])
             refs = report["references"]
             for ref in refs:
                 note = notes.get(ref["paper_id"])

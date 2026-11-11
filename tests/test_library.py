@@ -1,9 +1,42 @@
 import json
 
 import pytest
+import os
 
 from embodied_notes.library import Library, RevisionConflict, markdown_document, read_markdown
 from embodied_notes.synthesis import SummaryValidationError
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows destination-lock behavior")
+def test_atomic_write_retries_transient_windows_destination_lock(tmp_path, monkeypatch):
+    import embodied_notes.library as module
+    path = tmp_path / "packet.json"
+    path.write_text("old", encoding="utf-8")
+    actual_replace = os.replace
+    attempts = []
+    def briefly_locked(source, destination):
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise PermissionError("transient file lock")
+        actual_replace(source, destination)
+    monkeypatch.setattr(module.os, "replace", briefly_locked)
+    monkeypatch.setattr(module.time, "sleep", lambda delay: None)
+    module.atomic_write(path, "new")
+    assert path.read_text() == "new" and len(attempts) == 3
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_atomic_write_preserves_destination_on_persistent_failure(tmp_path, monkeypatch):
+    import embodied_notes.library as module
+    path = tmp_path / "packet.json"
+    path.write_text("old", encoding="utf-8")
+    def denied(source, destination):
+        raise PermissionError("persistent file lock")
+    monkeypatch.setattr(module.os, "replace", denied)
+    monkeypatch.setattr(module.time, "sleep", lambda delay: None)
+    with pytest.raises(PermissionError):
+        module.atomic_write(path, "new")
+    assert path.read_text() == "old" and list(tmp_path.glob("*.tmp")) == []
 
 
 def retrieved(full_text=True):

@@ -30,6 +30,9 @@ def create_server(root: Path) -> FastMCP:
         """External paper discovery. Results are metadata, not evidence of full reading."""
         if not 1 <= limit <= 50:
             raise ValueError("limit must be 1..50")
+        if provider in {"crossref", "semantic_scholar"}:
+            from .discovery import search_provider
+            return [p.model_dump() for p in search_provider(query, provider, limit)]
         return [p.model_dump() for p in search(query, limit=limit, provider=provider)]
 
     @server.tool()
@@ -62,11 +65,11 @@ def create_server(root: Path) -> FastMCP:
         return lib.commit_summary(packet_path(packet_id), summary, expected_revision)
 
     @server.tool()
-    def list_library(limit: int = 30) -> list[dict]:
+    def list_library(limit: int = 30, offset: int = 0) -> list[dict]:
         """List saved paper notes; use their stable paper IDs in a research packet."""
-        if not 1 <= limit <= 100:
-            raise ValueError("limit must be 1..100")
-        return [{k: p.get(k) for k in ("id", "title", "coverage", "tags", "revision")} for p in lib.list_papers()[:limit]]
+        if not 1 <= limit <= 100 or offset < 0:
+            raise ValueError("limit must be 1..100; offset must be nonnegative")
+        return [{k: p.get(k) for k in ("id", "title", "coverage", "tags", "revision")} for p in lib.list_papers()[offset:offset + limit]]
 
     @server.tool()
     def prepare_research(topic: str, paper_ids: list[str], strategy: dict | None = None) -> dict:
@@ -101,6 +104,8 @@ def create_server(root: Path) -> FastMCP:
         """Check saved note structure, metadata, evidence records, and links."""
         return validate_library(root)
 
+    from .mcp_extensions import register_extensions
+    register_extensions(server, root)
     return server
 
 

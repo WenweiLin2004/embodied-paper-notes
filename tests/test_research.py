@@ -74,3 +74,34 @@ def test_single_paper_cannot_be_presented_as_consensus(tmp_path):
     data["sections"][0]["heading"] = "共识"
     with pytest.raises(ValueError, match="two distinct"):
         compose(tmp_path, data)
+
+
+def test_planning_persists_without_weakening_fact_citations(tmp_path):
+    from pathlib import Path
+    from embodied_notes.library import read_markdown
+    library, paper = seed(tmp_path)
+    packet = prepare(tmp_path, "Reproduction", [paper])
+    data = payload(packet["packet_id"])
+    data["planning"] = {"open_questions": ["Confirm controller rate in the appendix."],
+                        "proposed_steps": ["Run one synthetic input before training."],
+                        "assumptions": ["Assume a simulator suffices for the smoke check."]}
+    result = compose(tmp_path, data)
+    metadata, body = read_markdown(Path(result["path"]))
+    assert metadata["planning"] == data["planning"]
+    assert "规划备注（非论文事实）" in body and len(metadata["references"]) == 1
+    newer = prepare(tmp_path, "Reproduction", [paper])
+    bad = payload(newer["packet_id"])
+    bad["planning"] = data["planning"]
+    bad["sections"][0]["claims"][0]["citations"] = []
+    with pytest.raises(ValueError, match="needs citations"):
+        compose(tmp_path, bad)
+
+
+def test_planning_only_report_checks_source_revisions(tmp_path):
+    library, paper = seed(tmp_path)
+    packet = prepare(tmp_path, "Plan", [paper])
+    with library.paper_path(paper["id"]).open("a", encoding="utf-8") as stream:
+        stream.write("\nChanged source\n")
+    with pytest.raises(RevisionConflict, match="Source note changed"):
+        compose(tmp_path, {"packet_id": packet["packet_id"], "sections": [],
+                           "planning": {"open_questions": ["Verify required hardware."]}})

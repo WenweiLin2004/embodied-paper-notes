@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import time
 from typing import Any
 from urllib.parse import urlparse
 import uuid
@@ -56,7 +57,15 @@ def atomic_write(path: Path, content: str) -> None:
     temporary = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
     try:
         temporary.write_text(content, encoding="utf-8", newline="\n")
-        os.replace(temporary, path)
+        for attempt in range(5):
+            try:
+                os.replace(temporary, path)
+                break
+            except PermissionError:
+                # Windows indexers can briefly hold a just-written destination.
+                if os.name != "nt" or attempt == 4:
+                    raise
+                time.sleep(0.05 * 2 ** attempt)
     finally:
         if temporary.exists():
             temporary.unlink()

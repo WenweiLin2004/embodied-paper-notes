@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "embodied-paper-notes"
-version = "0.1.0"
+version = "0.2.0"
 description = "Evidence-grounded embodied AI paper notes and research, with CLI, MCP, and portable skills"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,7 +20,7 @@ dev = ["pytest>=8,<10", "build>=1.2,<2"]
 pdf = ["docling>=2,<3"]
 
 [project.scripts]
-epn = "embodied_notes.cli:app"
+epn = "embodied_notes.cli:main"
 embodied-notes-mcp = "embodied_notes.mcp_server:main"
 
 [project.urls]

@@ -2,15 +2,16 @@
 
 面向具身智能的论文笔记与主题调研工作台。Markdown 是内容源；Quartz 提供静态网站；Python CLI 和本地 MCP 提供检索、证据读取、分类、入库与跨论文调研。项目文档和状态保留在仓库，不使用 Notion。
 
-[网站](https://wenweilin2004.github.io/embodied-paper-notes/) · [架构](docs/architecture.md) · [开源复用记录](docs/upstream.md)
+[网站](https://wenweilin2004.github.io/embodied-paper-notes/) · [架构](docs/architecture.md) · [Skills/MCP 生态](docs/ecosystem.md) · [开源复用记录](docs/upstream.md)
 
 ## 能做什么
 
 - 输入 arXiv ID/链接、DOI 或支持元数据的论文网页，获取可用原文，记录版本和获取范围。
-- arXiv / OpenAlex 主题检索；检索结果先进入候选包，不伪装成已读全文。
+- arXiv / OpenAlex / Crossref / Semantic Scholar 检索，支持多源并行、版本感知去重、引用图与明确的来源失败状态。
 - 证据 ID 约束的中文总结，具身任务/方法/本体/评测分类，独立个人批注。
-- 从已入库论文生成有引用的比较、共识、分歧与研究缺口报告。
-- CLI、stdio MCP 和两个可安装 Skill 共用同一套验证逻辑。
+- 从已入库论文生成有引用的比较、共识、分歧与研究缺口报告；生成具身评测条件矩阵和复现准备清单。
+- 阅读队列保存筛选状态与理由；离线检索笔记和原文证据；真实元数据导出 BibTeX / CSL-JSON。
+- CLI、28 个 stdio MCP 工具、3 个资源、4 个工作流 Prompt 和 8 个可安装 Skill 共用验证逻辑。
 - 全文缓存不入 Git；笔记和报告随仓库同步，GitHub Actions 校验并发布 Pages。
 
 ## 安装
@@ -49,6 +50,34 @@ epn doctor
 
 默认安装到项目，不更改用户全局配置。需要全局发现时显式运行 `epn install --client codex --scope user`。安装器保留其他 MCP 条目；遇到不同的现有配置会停止，避免静默覆盖。路径移动或新电脑需重新安装客户端配置。
 
+升级已安装的仓库技能时，先查看本地改动，再执行 `epn install --client codex --force`；这会更新打包的 Skill 文件，不覆盖其他 MCP 条目。`epn capabilities` 返回实际安装能力。
+
+## Skills 与 MCP 组合
+
+- `research-orchestrator`：研究总入口，按问题组合下列技能，记录范围和不足。
+- `paper-discover`：多源检索、引文追踪、候选筛选与阅读队列。
+- `paper-ingest`：读原文、分类、带证据总结与入库。
+- `paper-research`：跨论文综述、共识、分歧和研究缺口。
+- `paper-compare`：具身任务、本体、数据、动作表示与评测条件比较。
+- `paper-reproduce`：复现所需条件、已报告证据与缺失信息清单。
+- `citation-manager`：从已保存元数据导出文献引用。
+- `library-maintain`：本地搜索、重复或版本检查、质量检查和受修订保护的批注维护。
+
+例如：
+
+> 使用 research-orchestrator，调研 VLA 跨本体泛化；先检索和筛选，精读相关论文，比较实验条件，保存有引用的报告并导出 BibTeX。
+
+可选外部 MCP 按需配置，核心功能不依赖它们：
+
+```sh
+epn integrations list
+epn integrations install arxiv --client codex --dry-run
+epn integrations install arxiv --client codex
+epn integrations install github --client codex --dry-run
+```
+
+arXiv 扩展需要已有 `uvx`，可补充原始 LaTeX 等能力；GitHub 扩展使用官方 Docker MCP，以只读模式查找实现，需要 Docker 和客户端环境中的 `GITHUB_PERSONAL_ACCESS_TOKEN`。去掉 `--dry-run` 才会写客户端配置；不会把密钥值写入配置。第三方包或镜像由对应运行时首次启动时下载，安装器不声称已经启动验证。若客户端已有这些 MCP，可直接复用，无需重复注册。详见 [生态与外部集成](docs/ecosystem.md)。
+
 ## 单篇论文
 
 安装 Skill/MCP 后，可在客户端说：
@@ -76,6 +105,20 @@ epn research commit <report.json>
 ```
 
 也可直接使用 `paper-research` Skill。它会记录检索策略、筛选候选、读原文并比较可比的实验条件。[报告 JSON 规范](skills/paper-research/references/research-format.md)。共识陈述至少要引用两篇论文；未知引用和已过期的来源修订会被拒绝。
+
+```sh
+epn search 'vision language action' --provider all --limit 5
+epn queue add candidates.json --reason '候选：跨本体评测'
+epn queue list --status candidate
+epn find 'generalization' --tags method/vla
+epn research compare '跨本体评测条件比较' --papers '<id-1>,<id-2>'
+epn research reproduce '<id-1>'
+epn citations --papers '<id-1>,<id-2>' --format bibtex --output references.bib
+```
+
+`candidates.json` 可以是 search 的 JSON 列表、多源返回的 `papers` 对象或 discover 的 `candidates` 包。队列在 `data/reading-queue.json`，可随 Git 同步；状态修改需带 `list_queue` 返回的 revision。compare/reproduce 只准备证据与缺失项，不声称数值可比或实验已经复现。继续读取原文并通过 `commit_research` 保存有证据的报告。普通建议和未知项不要伪装成论文事实。
+
+报告可另带 `planning`：`open_questions` 保存待核实问题，`proposed_steps` 保存拟议步骤和验收标准，`assumptions` 保存工作假设。它们会标记为“规划备注（非论文事实）”，不替代事实章节的证据引用，也不表示实验已执行。
 
 ## 可选 API 自动模式
 

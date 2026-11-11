@@ -11,6 +11,20 @@ from .library import Library, RevisionConflict, atomic_write, digest, file_key, 
 from .taxonomy import as_dict
 
 DEFAULT_SECTIONS = ("比较", "共识", "分歧", "研究缺口")
+PLANNING_LABELS = {"open_questions": "待核实问题", "proposed_steps": "拟议步骤与验收标准", "assumptions": "工作假设"}
+
+
+def normalize_planning(value: Any) -> dict:
+    if not isinstance(value, dict) or set(value) - PLANNING_LABELS.keys():
+        raise ValueError("planning accepts only open_questions, proposed_steps, assumptions")
+    result = {}
+    for key in PLANNING_LABELS:
+        items = value.get(key, [])
+        if (not isinstance(items, list) or len(items) > 50
+                or any(not isinstance(item, str) or not item.strip() or len(item) > 4000 for item in items)):
+            raise ValueError("Planning entries must be 1..4000 character strings, at most 50 per category")
+        result[key] = [item.strip() for item in items]
+    return result
 
 
 def research_schema() -> dict:
@@ -25,6 +39,10 @@ def research_schema() -> dict:
         "required": ["packet_id", "sections"],
         "properties": {
             "packet_id": {"type": "string"}, "title": {"type": "string"},
+            "planning": {"type": "object", "additionalProperties": False, "properties": {
+                key: {"type": "array", "maxItems": 50,
+                      "items": {"type": "string", "minLength": 1, "maxLength": 4000}}
+                for key in PLANNING_LABELS}},
             "sections": {"type": "array", "items": {
                 "type": "object", "additionalProperties": False,
                 "required": ["heading", "claims"],
@@ -105,12 +123,13 @@ def load_packet(root: Path | str, identifier: str) -> dict:
 def compose(root: Path | str, payload: dict) -> dict:
     if not isinstance(payload, dict):
         raise ValueError("Research output must be a JSON object")
-    unknown = set(payload) - {"packet_id", "packet_path", "title", "sections", "expected_revision"}
+    unknown = set(payload) - {"packet_id", "packet_path", "title", "sections", "planning", "expected_revision"}
     if unknown:
         raise ValueError(f"Unknown research fields: {sorted(unknown)}")
     packet = load_packet(root, payload.get("packet_id") or payload.get("packet_path") or "")
     library = Library(root)
     available = {note["id"]: note for note in packet["notes"]}
+    planning = normalize_planning(payload.get("planning", {}))
     sections = payload.get("sections")
     if not isinstance(sections, list):
         raise ValueError("Research sections must be an array")
@@ -176,6 +195,11 @@ def compose(root: Path | str, payload: dict) -> dict:
             refs = " ".join(f"[来源 {number}](#reference-{number})" for number in claim["reference_numbers"])
             lines += ["- " + plain(claim["text"]) + " " + refs]
         lines.append("")
+    if any(planning.values()):
+        lines += ["## 规划备注（非论文事实）", "", "以下是待核实问题、拟议计划与工作假设，不代表论文结论或已完成实验。", ""]
+        for key, label in PLANNING_LABELS.items():
+            if planning[key]:
+                lines += ["### " + label, ""] + ["- " + plain(item) for item in planning[key]] + [""]
     lines += ["## 引用与证据", ""]
     for number, ref in enumerate(references, 1):
         note = available[ref["paper_id"]]
@@ -187,7 +211,7 @@ def compose(root: Path | str, payload: dict) -> dict:
     metadata = {"schema_version": 1, "title": title.strip(), "topic": packet["topic"], "created_at": utc_now(),
                 "date": local_date(), "tags": ["research"], "status": "ai-draft",
                 "strategy": packet["strategy"], "candidate_count": len(packet["candidates"]),
-                "source_count": len(available), "sections": normalized, "references": references,
+                "source_count": len(available), "sections": normalized, "planning": planning, "references": references,
                 "warnings": packet["warnings"]}
     path = library.root / "content" / "research" / (file_key(packet["topic"]) + ".md")
     document = markdown_document(metadata, "\n".join(lines))
@@ -196,7 +220,7 @@ def compose(root: Path | str, payload: dict) -> dict:
         actual = digest(path.read_bytes()) if path.exists() else None
         if expected != actual:
             raise RevisionConflict("Research report changed since prepare")
-        for paper_id in {ref["paper_id"] for ref in references}:
+        for paper_id in available:
             note = library.get_paper(paper_id)
             if note is None or note["revision"] != available[paper_id]["revision"]:
                 raise RevisionConflict(f"Source note changed since research prepare: {paper_id}")
@@ -204,4 +228,5 @@ def compose(root: Path | str, payload: dict) -> dict:
         if digest(path.read_bytes()) != digest(document):
             raise OSError("Research write verification failed")
     return {"path": str(path), "revision": digest(document), "topic": packet["topic"],
-            "source_count": len({ref["paper_id"] for ref in references}), "warnings": packet["warnings"]}
+            "source_count": len(available), "cited_source_count": len({ref["paper_id"] for ref in references}),
+            "warnings": packet["warnings"]}

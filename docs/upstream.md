@@ -4,6 +4,7 @@
 
 - **Quartz**：静态网站生成器，固定来源与 commit 见 [site/THIRD_PARTY.md](../site/THIRD_PARTY.md)。保留 MIT 许可；修改站点配置、中文导航与样式、根内容目录、构建脚本。源码留在 `site/`，可独立升级。
 - **arxiv-mcp-server**：原样纳入 arXiv 标识解析模块，保留 Apache-2.0 许可、原作者注释与固定来源记录。具体文件和 commit 见 [third_party/arxiv-mcp-server/PROVENANCE.md](../third_party/arxiv-mcp-server/PROVENANCE.md)。其余检索适配和库写入围绕本项目接口重新实现。
+- **arxiv-mcp-server 的引用格式化**：小幅改编 BibTeX 转义逻辑，保留 Apache-2.0 与固定 commit；见 [来源与改动](../third_party/arxiv-citation-format/PROVENANCE.md)。引文图接口参考其设计，未复制整套服务。8 个 Skills 和组合 MCP/比较/复现工作流由本项目编写。
 
 ## 接口依赖
 
