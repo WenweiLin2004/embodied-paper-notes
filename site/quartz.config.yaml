@@ -1,0 +1,139 @@
+# yaml-language-server: $schema=./quartz/plugins/quartz-plugins.schema.json
+configuration:
+  pageTitle: 具身智能 · 论文笔记
+  pageTitleSuffix: " · Embodied Notes"
+  enableSPA: true
+  enablePopovers: true
+  prefetch: viewport
+  analytics: null
+  locale: zh-CN
+  baseUrl: wenweilin2004.github.io/embodied-paper-notes
+  ignorePatterns:
+    - private
+    - templates
+    - .obsidian
+  theme:
+    fontOrigin: local
+    cdnCaching: false
+    typography:
+      header: system-ui
+      body: system-ui
+      code: monospace
+    colors:
+      lightMode:
+        light: "#fbfaf7"
+        lightgray: "#e4e3df"
+        gray: "#a1a5aa"
+        darkgray: "#4f5963"
+        dark: "#202a33"
+        secondary: "#1b6470"
+        tertiary: "#627b73"
+        highlight: "rgba(27,100,112,0.08)"
+        textHighlight: "#cce9df88"
+      darkMode:
+        light: "#172027"
+        lightgray: "#303c46"
+        gray: "#78858f"
+        darkgray: "#c3cbd1"
+        dark: "#edf0f1"
+        secondary: "#89c8cf"
+        tertiary: "#9ec4b0"
+        highlight: "rgba(137,200,207,0.10)"
+        textHighlight: "#3d756c88"
+  links:
+    markdownLinkResolution: absolute
+  contentIndex:
+    enableSiteMap: true
+    enableRSS: false
+plugins:
+  - source: "@quartz-community/created-modified-date"
+    enabled: true
+    options:
+      defaultDateType: created
+      priority: [frontmatter, git, filesystem]
+    order: 10
+  - source: "@quartz-community/syntax-highlighting"
+    enabled: true
+    options:
+      theme: {light: github-light, dark: github-dark}
+      keepBackground: false
+    order: 20
+  - source: "@quartz-community/github-flavored-markdown"
+    enabled: true
+    order: 30
+  - source: "@quartz-community/obsidian-flavored-markdown"
+    enabled: true
+    options: {enableInHtmlEmbed: false, enableCheckbox: true}
+    order: 40
+  - source: "@quartz-community/table-of-contents"
+    enabled: true
+    order: 50
+    layout: {position: right, priority: 20}
+  - source: "@quartz-community/description"
+    enabled: true
+    order: 70
+  - source: "@quartz-community/latex"
+    enabled: true
+    options: {renderEngine: katex}
+    order: 80
+  - source: "@quartz-community/alias-redirects"
+    enabled: true
+  - source: "@quartz-community/favicon"
+    enabled: true
+  - source: "@quartz-community/content-page"
+    enabled: true
+  - source: "@quartz-community/folder-page"
+    enabled: true
+  - source: "@quartz-community/tag-page"
+    enabled: true
+  - source: "@quartz-community/explorer"
+    enabled: true
+    layout: {position: left, priority: 50}
+  - source: "@quartz-community/search"
+    enabled: true
+    layout: {position: left, priority: 20}
+  - source: "@quartz-community/backlinks"
+    enabled: true
+    layout: {position: right, priority: 50}
+  - source: "@quartz-community/article-title"
+    enabled: true
+    layout: {position: beforeBody, priority: 10}
+  - source: "@quartz-community/content-meta"
+    enabled: true
+    layout: {position: beforeBody, priority: 20}
+  - source: "@quartz-community/tag-list"
+    enabled: true
+    layout: {position: beforeBody, priority: 30}
+  - source: "@quartz-community/note-properties"
+    enabled: true
+    options:
+      includeAll: false
+      includedProperties: [status, paper_id, source_url]
+      excludedProperties: []
+      hidePropertiesView: false
+    order: 5
+    layout: {position: beforeBody, priority: 25}
+  - source: "@quartz-community/page-title"
+    enabled: true
+    layout: {position: left, priority: 10}
+  - source: "@quartz-community/darkmode"
+    enabled: true
+    layout: {position: left, priority: 30}
+  - source: "@quartz-community/breadcrumbs"
+    enabled: true
+    layout: {position: beforeBody, priority: 5, condition: not-index}
+  - source: "@quartz-community/footer"
+    enabled: true
+    options:
+      links:
+        Quartz: https://quartz.jzhao.xyz/
+    layout: {position: footer, priority: 50}
+layout:
+  byPageType:
+    "404":
+      positions: {beforeBody: [], left: [], right: []}
+    content: {}
+    folder:
+      positions: {right: []}
+    tag:
+      positions: {right: []}

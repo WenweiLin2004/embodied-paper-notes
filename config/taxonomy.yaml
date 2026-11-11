@@ -1,0 +1,29 @@
+version: 1
+tags:
+  task/manipulation: 操作
+  task/navigation: 导航
+  task/locomotion: 运动控制
+  task/mobile_manipulation: 移动操作
+  task/whole_body: 全身控制
+  task/planning: 规划
+  task/perception: 感知
+  method/vla: 视觉语言动作模型
+  method/imitation_learning: 模仿学习
+  method/reinforcement_learning: 强化学习
+  method/diffusion_policy: 扩散策略
+  method/world_model: 世界模型
+  method/foundation_model: 基础模型
+  method/classical_control: 经典控制
+  body/single_arm: 单机械臂
+  body/dual_arm: 双机械臂
+  body/humanoid: 人形机器人
+  body/quadruped: 四足机器人
+  body/mobile_robot: 移动机器人
+  body/hand: 灵巧手
+  role/dataset: 数据集
+  role/benchmark: 基准
+  role/model: 模型
+  role/system: 系统
+  role/survey: 综述
+  evaluation/simulation: 仿真评测
+  evaluation/real_world: 实机评测

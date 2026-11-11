@@ -1,2 +1,116 @@
-# embodied-paper-notes
-Evidence-grounded notes on embodied AI papers, with automated retrieval, summarization, and classification.
+# Embodied Paper Notes
+
+面向具身智能的论文笔记与主题调研工作台。Markdown 是内容源；Quartz 提供静态网站；Python CLI 和本地 MCP 提供检索、证据读取、分类、入库与跨论文调研。项目文档和状态保留在仓库，不使用 Notion。
+
+[网站](https://wenweilin2004.github.io/embodied-paper-notes/) · [架构](docs/architecture.md) · [开源复用记录](docs/upstream.md)
+
+## 能做什么
+
+- 输入 arXiv ID/链接、DOI 或支持元数据的论文网页，获取可用原文，记录版本和获取范围。
+- arXiv / OpenAlex 主题检索；检索结果先进入候选包，不伪装成已读全文。
+- 证据 ID 约束的中文总结，具身任务/方法/本体/评测分类，独立个人批注。
+- 从已入库论文生成有引用的比较、共识、分歧与研究缺口报告。
+- CLI、stdio MCP 和两个可安装 Skill 共用同一套验证逻辑。
+- 全文缓存不入 Git；笔记和报告随仓库同步，GitHub Actions 校验并发布 Pages。
+
+## 安装
+
+需要 Python 3.11+；网站还需要 Node.js 24 和 npm。先 clone：
+
+```sh
+git clone https://github.com/WenweiLin2004/embodied-paper-notes.git
+cd embodied-paper-notes
+```
+
+Windows PowerShell：
+
+```powershell
+./scripts/install.ps1 -Client codex
+```
+
+macOS / Linux：
+
+```sh
+sh scripts/install.sh codex
+```
+
+脚本建立项目 `.venv`，安装 Python 包，并安装项目级 Skills/MCP。完成后重启客户端或重新加载项目。Codex 需要信任这个项目才能加载项目配置。可将参数换成 `claude` 或 `generic`；后者生成通用 `.mcp.json`，需导入支持 stdio 的客户端。
+
+手动安装或只使用工具包：
+
+```sh
+python -m pip install -e '.[dev]'
+epn --root . install --client codex --dry-run
+epn --root . install --client codex
+epn doctor
+```
+
+包也支持 `pip install git+https://github.com/WenweiLin2004/embodied-paper-notes.git`，或 `uv tool install git+https://github.com/WenweiLin2004/embodied-paper-notes.git`。独立内容库用 `epn init PATH` 创建；完整网站仍从本仓库 clone。
+
+默认安装到项目，不更改用户全局配置。需要全局发现时显式运行 `epn install --client codex --scope user`。安装器保留其他 MCP 条目；遇到不同的现有配置会停止，避免静默覆盖。路径移动或新电脑需重新安装客户端配置。
+
+## 单篇论文
+
+安装 Skill/MCP 后，可在客户端说：
+
+> 使用 paper-ingest，将这篇论文加入本库：论文链接。总结方法、实验条件和局限，并自动分类。
+
+CLI 等价流程：
+
+```sh
+epn ingest https://arxiv.org/abs/2406.09246v1
+# 输出 packet_path、完整证据和 allowed_tags；让当前代理按 Skill 生成 summary.json
+epn commit <packet_path> <summary.json>
+epn validate
+```
+
+证据 JSON 在 `.cache/epn/packets/`；原文分段可通过 MCP 分页读取。总结 JSON 规范见 [paper-ingest](skills/paper-ingest/references/summary-format.md)。只取得摘要时，只能标记摘要阅读范围；引用校验检查来源存在，不代表模型结论已经科学审定。
+
+## 主题调研
+
+```sh
+epn research discover 'VLA 的跨本体泛化' --query '"vision language action" AND "cross embodiment"' --provider arxiv --limit 10
+# 选择候选并完成单篇入库后，用稳定 paper IDs 准备调研包
+epn research prepare 'VLA 的跨本体泛化' --papers '<paper-id-1>,<paper-id-2>'
+epn research commit <report.json>
+```
+
+也可直接使用 `paper-research` Skill。它会记录检索策略、筛选候选、读原文并比较可比的实验条件。[报告 JSON 规范](skills/paper-research/references/research-format.md)。共识陈述至少要引用两篇论文；未知引用和已过期的来源修订会被拒绝。
+
+## 可选 API 自动模式
+
+默认 Skill/MCP 模式使用当前代理，无需额外模型 API 密钥。无人值守模式支持带 JSON mode 的 OpenAI-compatible Chat Completions 接口，显式设置 `EPN_MODEL`、`EPN_API_KEY`，可选 `EPN_BASE_URL`（默认 `https://api.openai.com/v1`）：
+
+```sh
+epn ingest <paper-url> --auto
+epn research auto <research-packet.json>
+```
+
+密钥只放进本机环境变量或 CI Secrets。自动模式会产生模型调用费用；不会在缺配置时偷偷选模型，也不重试可能计费的请求。上下文超过 `EPN_MAX_INPUT_CHARS`（默认 120000 字符）会明确报错，改用分章节 Skill 阅读，不静默截断全文。
+
+默认 PDF 用轻量解析。可选 `pip install -e '.[pdf]'` 安装 Docling，并显式指定 `epn ingest <url> --pdf-parser docling`；首次使用可能下载模型权重。复杂表格、公式和图像仍须人工或视觉核验。
+
+## 网站与多电脑同步
+
+```sh
+cd site
+npm ci
+npm run build
+npm run dev
+```
+
+笔记在根 `content/`，不是 `site/content/`。Pages 的项目路径已设为 `wenweilin2004.github.io/embodied-paper-notes`。`status: ai-draft` 表示未经人工复核，仍会公开显示；不要把它当访问控制。
+
+开始工作前 `git pull`，结束后提交笔记并 `git push`。MCP 不替用户执行 push；推送到 main 后 Actions 校验并部署。两台电脑同时改同一文件仍可能出现 Git 冲突。缓存和本地客户端配置不随 Git 同步；完整原文可重新获取。
+
+## 开发与验证
+
+```sh
+python -m pytest
+epn validate
+python -m build
+```
+
+测试覆盖身份与版本解析、HTML/PDF 回退、证据引用、摘要范围、修订冲突、人工注释保护、研究引用、安装幂等性和真实 MCP stdio 握手。网络提供方和可选模型会变化；测试不代表全文解析或总结准确率的通用保证。
+
+项目自有代码 MIT。实际复制/改编的 Quartz 和 arXiv 模块保留原许可与固定 commit；详见 [复用记录](docs/upstream.md)。

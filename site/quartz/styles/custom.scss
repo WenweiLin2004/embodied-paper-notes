@@ -1,0 +1,53 @@
+@use "./variables.scss" as *;
+
+// Embodied Paper Notes: a quiet, bilingual research reading surface.
+body {
+  --bodyFont: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --headerFont: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --codeFont: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
+article {
+  font-size: 1rem;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+
+  h2 {
+    margin-top: 2.5rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--lightgray);
+  }
+
+  h3 { margin-top: 1.7rem; }
+  li { margin-block: 0.35rem; }
+  a.internal { border-radius: 3px; }
+  blockquote {
+    margin-inline: 0;
+    padding: 0.5rem 1.15rem;
+    background: var(--highlight);
+  }
+}
+
+.page-title {
+  font-size: 1.3rem;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+}
+
+.article-title { line-height: 1.45; letter-spacing: -0.015em; }
+.home-eyebrow {
+  font-family: var(--codeFont);
+  color: var(--secondary);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  margin-bottom: 1.5rem;
+}
+.content-meta { font-size: 0.85rem; }
+.sidebar { font-size: 0.92rem; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding-block: 0.4rem; }
+table { font-size: 0.9rem; }
+
+@media (max-width: 800px) {
+  article { font-size: 0.98rem; line-height: 1.8; }
+  .article-title { font-size: 1.75rem; }
+}

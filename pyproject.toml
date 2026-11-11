@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "embodied-paper-notes"
+version = "0.1.0"
+description = "Evidence-grounded embodied AI paper notes and research, with CLI, MCP, and portable skills"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "Wenwei Lin"}]
+dependencies = [
+  "httpx>=0.28,<1", "beautifulsoup4>=4.13,<5", "pydantic>=2.10,<3",
+  "PyYAML>=6.0,<7", "typer>=0.15,<1", "mcp>=1.12,<2", "pypdf>=5,<7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "build>=1.2,<2"]
+pdf = ["docling>=2,<3"]
+
+[project.scripts]
+epn = "embodied_notes.cli:app"
+embodied-notes-mcp = "embodied_notes.mcp_server:main"
+
+[project.urls]
+Repository = "https://github.com/WenweiLin2004/embodied-paper-notes"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/embodied_notes"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "embodied_notes/bundled_skills"
+"config/taxonomy.yaml" = "embodied_notes/default_taxonomy.yaml"
+"third_party" = "embodied_notes/third_party"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "skills", "config", "third_party", "tests", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
